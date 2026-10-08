@@ -1,0 +1,17 @@
+{
+  "name": "Hausaufgaben-Timer",
+  "short_name": "Lern-Timer",
+  "description": "Lernzeit und kurze Pausen für Grundschulkinder, sichtbar als Bleistift, der immer kürzer wird.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7faff",
+  "theme_color": "#f7faff",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

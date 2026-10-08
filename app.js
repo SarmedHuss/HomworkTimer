@@ -1,0 +1,384 @@
+(() => {
+  "use strict";
+
+  const SETTINGS_KEY = "hwt.settings.v1";
+  const SESSION_KEY = "hwt.session.v1";
+  const DEFAULTS = { focus: "15", break: "3", rounds: "3", sound: "on" };
+
+  // ?speed=60 lässt eine Minute in einer Sekunde ablaufen (zum Ausprobieren).
+  const SPEED = Math.max(1, Number(new URLSearchParams(location.search).get("speed")) || 1);
+
+  const $ = (id) => document.getElementById(id);
+  const screens = ["setup", "timer", "switch", "done"];
+
+  const el = {
+    form: $("setup-form"),
+    summary: $("summary"),
+    installHint: $("install-hint"),
+    timer: $("screen-timer"),
+    phaseTitle: $("phase-title"),
+    pencil: $("pencil"),
+    stars: $("stars"),
+    starsSwitch: $("stars-switch"),
+    starsDone: $("stars-done"),
+    toggle: $("btn-toggle"),
+    stop: $("btn-stop"),
+    switchTitle: $("switch-title"),
+    switchText: $("switch-text"),
+    next: $("btn-next"),
+    again: $("btn-again"),
+    home: $("btn-home"),
+  };
+
+  /* ---------- Speicher ---------- */
+
+  const store = {
+    get(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch { return fallback; }
+    },
+    set(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* egal */ }
+    },
+    remove(key) {
+      try { localStorage.removeItem(key); } catch { /* egal */ }
+    },
+  };
+
+  let settings = { ...DEFAULTS, ...store.get(SETTINGS_KEY, {}) };
+
+  /* Sitzung:
+     phase: "focus" | "break"
+     round: aktuelle Runde (1-basiert)
+     view: "timer" | "switch" | "done"
+     duration, remaining (ms), endAt (Zeitstempel), paused */
+  let session = null;
+
+  /* ---------- Bildschirm wechseln ---------- */
+
+  function show(name) {
+    for (const s of screens) {
+      const node = $("screen-" + s);
+      if (s === name) node.setAttribute("data-active", "");
+      else node.removeAttribute("data-active");
+    }
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- Einstellungen ---------- */
+
+  function renderSettings() {
+    for (const group of el.form.querySelectorAll(".options")) {
+      const name = group.dataset.name;
+      for (const btn of group.querySelectorAll("button")) {
+        btn.setAttribute("aria-pressed", String(btn.value === settings[name]));
+      }
+    }
+    const r = Number(settings.rounds);
+    const total = r * Number(settings.focus) + (r - 1) * Number(settings.break);
+    el.summary.textContent = r === 1
+      ? `Eine Runde mit ${settings.focus} Minuten Lernzeit.`
+      : `${r} Runden, insgesamt etwa ${total} Minuten.`;
+  }
+
+  el.form.addEventListener("click", (e) => {
+    const btn = e.target.closest(".options button");
+    if (!btn) return;
+    settings[btn.parentElement.dataset.name] = btn.value;
+    store.set(SETTINGS_KEY, settings);
+    renderSettings();
+  });
+
+  el.form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    unlockAudio();
+    session = { phase: "focus", round: 1, view: "timer" };
+    startPhase("focus");
+  });
+
+  /* ---------- Sterne ---------- */
+
+  function renderStars(list, { pop = false } = {}) {
+    const total = Number(settings.rounds);
+    const done = session ? doneRounds() : 0;
+    list.innerHTML = "";
+    for (let i = 1; i <= total; i++) {
+      const li = document.createElement("li");
+      if (i <= done) li.className = "done";
+      else if (session && i === session.round && session.phase === "focus" && session.view === "timer") li.className = "current";
+      if (pop && i === done) li.classList.add("pop");
+      list.appendChild(li);
+    }
+    list.setAttribute("aria-label", `${done} von ${total} Runden geschafft`);
+  }
+
+  function doneRounds() {
+    if (!session) return 0;
+    // Nach Ende einer Lernzeit zählt die Runde als geschafft.
+    const finishedCurrent = session.phase === "break" || session.view !== "timer";
+    return session.round - 1 + (finishedCurrent ? 1 : 0);
+  }
+
+  /* ---------- Timer ---------- */
+
+  let raf = 0;
+
+  function startPhase(phase) {
+    const minutes = Number(phase === "focus" ? settings.focus : settings.break);
+    const duration = (minutes * 60000) / SPEED;
+    Object.assign(session, {
+      phase,
+      view: "timer",
+      duration,
+      remaining: duration,
+      endAt: Date.now() + duration,
+      paused: false,
+    });
+    saveSession();
+    showTimer();
+  }
+
+  function showTimer() {
+    el.timer.dataset.phase = session.phase;
+    el.phaseTitle.textContent = session.phase === "focus" ? "Lernzeit" : "Pause";
+    renderStars(el.stars);
+    renderPaused();
+    show("timer");
+    requestWakeLock();
+    loop();
+  }
+
+  function remainingNow() {
+    return session.paused ? session.remaining : Math.max(0, session.endAt - Date.now());
+  }
+
+  function loop() {
+    cancelAnimationFrame(raf);
+    const step = () => {
+      if (!session || session.view !== "timer") return;
+      const rem = remainingNow();
+      drawPencil(rem / session.duration);
+      if (rem <= 0) { phaseEnded(true); return; }
+      raf = requestAnimationFrame(step);
+    };
+    step();
+  }
+
+  let lastText = "";
+  function drawPencil(fraction) {
+    const p = Math.min(1, Math.max(0, fraction));
+    el.pencil.style.setProperty("--p", p.toFixed(4));
+    const text =
+      p > 0.75 ? "Noch viel Zeit" :
+      p > 0.4 ? "Noch etwa die Hälfte" :
+      p > 0.15 ? "Nicht mehr viel Zeit" : "Gleich geschafft";
+    if (text !== lastText) {
+      lastText = text;
+      el.pencil.setAttribute("aria-valuetext", text);
+    }
+    el.pencil.setAttribute("aria-valuenow", String(Math.round(p * 100)));
+  }
+
+  function renderPaused() {
+    if (session.paused) el.timer.setAttribute("data-paused", "");
+    else el.timer.removeAttribute("data-paused");
+    el.toggle.textContent = session.paused ? "Weiter" : "Anhalten";
+  }
+
+  el.toggle.addEventListener("click", () => {
+    if (!session) return;
+    if (session.paused) {
+      session.paused = false;
+      session.endAt = Date.now() + session.remaining;
+      requestWakeLock();
+    } else {
+      session.remaining = remainingNow();
+      session.paused = true;
+    }
+    saveSession();
+    renderPaused();
+    loop();
+  });
+
+  function phaseEnded(withSound) {
+    cancelAnimationFrame(raf);
+    releaseWakeLock();
+    if (withSound) chime();
+
+    const total = Number(settings.rounds);
+    if (session.phase === "focus") {
+      if (session.round >= total) {
+        session.view = "done";
+        saveSession();
+        renderStars(el.starsDone, { pop: withSound });
+        show("done");
+        return;
+      }
+      session.view = "switch";
+      el.switchTitle.textContent = "Super gemacht!";
+      el.switchText.textContent = "Zeit für eine kleine Pause.";
+      el.next.textContent = "Pause starten";
+    } else {
+      session.view = "switch";
+      el.switchTitle.textContent = "Weiter geht's!";
+      el.switchText.textContent = "Die Pause ist vorbei. Jetzt kommt die nächste Lernzeit.";
+      el.next.textContent = "Lernzeit starten";
+    }
+    saveSession();
+    renderStars(el.starsSwitch, { pop: withSound && session.phase === "focus" });
+    show("switch");
+  }
+
+  el.next.addEventListener("click", () => {
+    unlockAudio();
+    if (session.phase === "focus") {
+      startPhase("break");
+    } else {
+      session.round += 1;
+      startPhase("focus");
+    }
+  });
+
+  el.again.addEventListener("click", () => {
+    unlockAudio();
+    session = { phase: "focus", round: 1, view: "timer" };
+    startPhase("focus");
+  });
+
+  el.home.addEventListener("click", goHome);
+
+  function goHome() {
+    cancelAnimationFrame(raf);
+    releaseWakeLock();
+    session = null;
+    store.remove(SESSION_KEY);
+    renderSettings();
+    show("setup");
+  }
+
+  /* ---------- Beenden: gedrückt halten ---------- */
+
+  const HOLD_MS = 1200;
+  let holdTimer = 0;
+
+  function holdStart(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    el.stop.classList.add("holding");
+    holdTimer = setTimeout(() => {
+      el.stop.classList.remove("holding");
+      goHome();
+    }, HOLD_MS);
+  }
+  function holdCancel() {
+    clearTimeout(holdTimer);
+    el.stop.classList.remove("holding");
+  }
+  el.stop.addEventListener("pointerdown", holdStart);
+  for (const ev of ["pointerup", "pointerleave", "pointercancel"]) el.stop.addEventListener(ev, holdCancel);
+  el.stop.addEventListener("contextmenu", (e) => e.preventDefault());
+  // Tastatur: mit Enter/Leertaste ausgelöst → kurz nachfragen
+  el.stop.addEventListener("click", (e) => {
+    if (e.detail === 0 && confirm("Timer beenden?")) goHome();
+  });
+
+  /* ---------- Sitzung speichern & fortsetzen ---------- */
+
+  function saveSession() {
+    if (session) store.set(SESSION_KEY, { ...session, speed: SPEED });
+  }
+
+  function resumeSession() {
+    const saved = store.get(SESSION_KEY, null);
+    if (!saved || saved.speed !== SPEED || !saved.duration) return false;
+    session = saved;
+    if (session.view === "timer") {
+      if (!session.paused && session.endAt <= Date.now()) {
+        phaseEnded(false);
+      } else {
+        showTimer();
+      }
+    } else if (session.view === "switch") {
+      session.view = "timer";
+      phaseEnded(false);
+    } else if (session.view === "done") {
+      renderStars(el.starsDone);
+      show("done");
+    }
+    return true;
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && session && session.view === "timer") {
+      if (!session.paused) requestWakeLock();
+      loop();
+    }
+  });
+
+  /* ---------- Bildschirm wach halten ---------- */
+
+  let wakeLock = null;
+  async function requestWakeLock() {
+    if (!("wakeLock" in navigator) || wakeLock || session?.paused) return;
+    try {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => { wakeLock = null; });
+    } catch { wakeLock = null; }
+  }
+  function releaseWakeLock() {
+    if (wakeLock) wakeLock.release().catch(() => {});
+    wakeLock = null;
+  }
+
+  /* ---------- Ton ---------- */
+
+  let audio = null;
+  function unlockAudio() {
+    if (settings.sound !== "on") return;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === "suspended") audio.resume();
+      // stummer Ton schaltet Audio auf iOS frei
+      const buf = audio.createBuffer(1, 1, 22050);
+      const src = audio.createBufferSource();
+      src.buffer = buf;
+      src.connect(audio.destination);
+      src.start(0);
+    } catch { audio = null; }
+  }
+
+  function chime() {
+    if (navigator.vibrate) navigator.vibrate([120, 80, 120]);
+    if (settings.sound !== "on" || !audio) return;
+    const notes = [659.25, 783.99, 1046.5]; // E5, G5, C6
+    const t0 = audio.currentTime + 0.05;
+    notes.forEach((freq, i) => {
+      const t = t0 + i * 0.22;
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      osc.connect(gain).connect(audio.destination);
+      osc.start(t);
+      osc.stop(t + 1);
+    });
+  }
+
+  /* ---------- Start ---------- */
+
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  el.installHint.hidden = !(isIOS && !isStandalone);
+
+  renderSettings();
+  if (!resumeSession()) show("setup");
+
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+})();

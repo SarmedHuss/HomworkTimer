@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Hausaufgaben-Timer</title>
+  <meta name="description" content="Ein Timer für Grundschulkinder: Lernzeit und kurze Pausen, sichtbar als Bleistift, der immer kürzer wird.">
+  <meta name="theme-color" content="#f7faff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Lern-Timer">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Einstellungen (für Eltern) -->
+  <main id="screen-setup" class="screen" data-active>
+    <header class="setup-head">
+      <img src="icons/icon-192.png" alt="" class="app-mark" width="56" height="56">
+      <h1>Hausaufgaben-Timer</h1>
+      <p class="lead">Kurze Lernzeiten, kleine Pausen. Der Bleistift zeigt, wie viel Zeit noch bleibt.</p>
+    </header>
+
+    <form id="setup-form" class="setup-form">
+      <fieldset class="choice">
+        <legend>Lernzeit in Minuten</legend>
+        <div class="options" data-name="focus">
+          <button type="button" value="5">5</button>
+          <button type="button" value="10">10</button>
+          <button type="button" value="15">15</button>
+          <button type="button" value="20">20</button>
+          <button type="button" value="25">25</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="choice">
+        <legend>Pause in Minuten</legend>
+        <div class="options" data-name="break">
+          <button type="button" value="2">2</button>
+          <button type="button" value="3">3</button>
+          <button type="button" value="5">5</button>
+          <button type="button" value="8">8</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="choice">
+        <legend>Runden</legend>
+        <div class="options" data-name="rounds">
+          <button type="button" value="1">1</button>
+          <button type="button" value="2">2</button>
+          <button type="button" value="3">3</button>
+          <button type="button" value="4">4</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="choice">
+        <legend>Ton am Ende</legend>
+        <div class="options" data-name="sound">
+          <button type="button" value="on">An</button>
+          <button type="button" value="off">Aus</button>
+        </div>
+      </fieldset>
+
+      <p id="summary" class="summary"></p>
+
+      <button type="submit" class="btn btn-primary btn-big">Los geht's</button>
+      <p id="install-hint" class="install-hint" hidden>
+        Tipp: Im Teilen-Menü „Zum Home-Bildschirm“ wählen, dann läuft der Timer wie eine App.
+      </p>
+    </form>
+  </main>
+
+  <!-- Timer (für das Kind) -->
+  <main id="screen-timer" class="screen" data-phase="focus">
+    <div class="timer-top">
+      <ol id="stars" class="stars" aria-label="Runden"></ol>
+    </div>
+
+    <h2 id="phase-title" class="phase-title">Lernzeit</h2>
+
+    <div id="pencil" class="pencil" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="Noch die ganze Zeit">
+      <div class="pencil-track">
+        <div class="pencil-ghost"></div>
+        <div class="pencil-live">
+          <div class="pencil-eraser"></div>
+          <div class="pencil-ferrule"></div>
+          <div class="pencil-body"></div>
+        </div>
+      </div>
+      <div class="pencil-cone"><div class="pencil-lead"></div></div>
+    </div>
+
+    <div class="timer-controls">
+      <button id="btn-toggle" class="btn btn-primary btn-big" type="button">Anhalten</button>
+      <button id="btn-stop" class="btn btn-quiet hold" type="button" aria-describedby="stop-hint">
+        <span class="hold-fill" aria-hidden="true"></span>
+        <span class="hold-label">Beenden</span>
+      </button>
+      <p id="stop-hint" class="hint">Zum Beenden gedrückt halten</p>
+    </div>
+  </main>
+
+  <!-- Wechsel zwischen Lernzeit und Pause -->
+  <main id="screen-switch" class="screen">
+    <div class="switch-card">
+      <ol id="stars-switch" class="stars stars-big" aria-label="Runden"></ol>
+      <h2 id="switch-title">Super gemacht!</h2>
+      <p id="switch-text">Zeit für eine kleine Pause.</p>
+      <button id="btn-next" class="btn btn-primary btn-big" type="button">Pause starten</button>
+    </div>
+  </main>
+
+  <!-- Geschafft -->
+  <main id="screen-done" class="screen">
+    <div class="switch-card">
+      <ol id="stars-done" class="stars stars-big" aria-label="Geschaffte Runden"></ol>
+      <h2>Geschafft!</h2>
+      <p>Alle Runden sind fertig. Du hast dich toll konzentriert.</p>
+      <button id="btn-again" class="btn btn-primary btn-big" type="button">Nochmal</button>
+      <button id="btn-home" class="btn btn-quiet" type="button">Einstellungen</button>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
