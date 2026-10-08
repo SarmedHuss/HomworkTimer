@@ -20,7 +20,7 @@ Weitere Details:
 
 ## Auf dem iPhone verwenden
 
-1. Seite in Safari öffnen: `https://sarmedhuss.github.io/homworktimer/`
+1. Seite in Safari öffnen: `https://sarmedhuss.github.io/HomworkTimer/`
 2. Teilen-Symbol → **Zum Home-Bildschirm**.
 3. Die App startet dann im Vollbild ohne Safari-Leiste.
 
@@ -29,8 +29,8 @@ Weitere Details:
 ## Lokal starten
 
 ```bash
-git clone https://github.com/SarmedHuss/homworktimer.git
-cd homworktimer
+git clone https://github.com/SarmedHuss/HomworkTimer.git
+cd HomworkTimer
 python3 -m http.server 8000
 ```
 
