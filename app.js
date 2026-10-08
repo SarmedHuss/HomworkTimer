@@ -18,9 +18,11 @@
     timer: $("screen-timer"),
     phaseTitle: $("phase-title"),
     pencil: $("pencil"),
-    stars: $("stars"),
-    starsSwitch: $("stars-switch"),
-    starsDone: $("stars-done"),
+    time: $("time"),
+    rounds: $("rounds"),
+    roundsSwitch: $("rounds-switch"),
+    roundsDone: $("rounds-done"),
+    doneText: $("done-text"),
     toggle: $("btn-toggle"),
     stop: $("btn-stop"),
     switchTitle: $("switch-title"),
@@ -98,20 +100,45 @@
     startPhase("focus");
   });
 
-  /* ---------- Sterne ---------- */
+  /* ---------- Bleistifte ---------- */
 
-  function renderStars(list, { pop = false } = {}) {
+  const PENCIL_PARTS =
+    '<div class="pc-eraser"></div><div class="pc-ferrule"></div><div class="pc-body"></div>' +
+    '<div class="pc-cone"><div class="pc-lead"></div></div>';
+
+  function buildPencil(node) {
+    node.innerHTML =
+      '<div class="pc-shape pc-ghost" aria-hidden="true">' + PENCIL_PARTS + "</div>" +
+      '<div class="pc-shape pc-live" aria-hidden="true">' + PENCIL_PARTS + "</div>";
+    return node;
+  }
+
+  // Ein kleiner Bleistift pro Runde: verbraucht = Stummel, aktuell = schrumpft mit, offen = neu.
+  function renderRounds(list) {
     const total = Number(settings.rounds);
-    const done = session ? doneRounds() : 0;
+    const done = doneRounds();
     list.innerHTML = "";
     for (let i = 1; i <= total; i++) {
       const li = document.createElement("li");
-      if (i <= done) li.className = "done";
-      else if (session && i === session.round && session.phase === "focus" && session.view === "timer") li.className = "current";
-      if (pop && i === done) li.classList.add("pop");
+      const pencil = buildPencil(document.createElement("div"));
+      pencil.className = "pencil";
+      let p = 1;
+      if (i <= done) { li.className = "done"; p = 0; }
+      else if (session && i === session.round && session.view === "timer") li.className = "current";
+      pencil.style.setProperty("--p", String(p));
+      li.appendChild(pencil);
       list.appendChild(li);
     }
-    list.setAttribute("aria-label", `${done} von ${total} Runden geschafft`);
+    list.setAttribute("aria-label", `${done} von ${total} Bleistiften verbraucht`);
+  }
+
+  // Runden-Bleistift, der gerade als verbraucht markiert wird, sanft schrumpfen lassen.
+  function animateLastDone(list) {
+    const done = doneRounds();
+    const pencil = list.children[done - 1]?.firstChild;
+    if (!pencil) return;
+    pencil.style.setProperty("--p", "1");
+    requestAnimationFrame(() => requestAnimationFrame(() => pencil.style.setProperty("--p", "0")));
   }
 
   function doneRounds() {
@@ -143,7 +170,8 @@
   function showTimer() {
     el.timer.dataset.phase = session.phase;
     el.phaseTitle.textContent = session.phase === "focus" ? "Lernzeit" : "Pause";
-    renderStars(el.stars);
+    renderRounds(el.rounds);
+    lastSecond = -1;
     renderPaused();
     show("timer");
     requestWakeLock();
@@ -167,9 +195,22 @@
   }
 
   let lastText = "";
+  let lastSecond = -1;
   function drawPencil(fraction) {
     const p = Math.min(1, Math.max(0, fraction));
-    el.pencil.style.setProperty("--p", p.toFixed(4));
+    const value = p.toFixed(4);
+    el.pencil.style.setProperty("--p", value);
+    if (session.phase === "focus") {
+      el.rounds.querySelector("li.current .pencil")?.style.setProperty("--p", value);
+    }
+    const secs = Math.ceil((p * session.duration * SPEED) / 1000);
+    if (secs !== lastSecond) {
+      lastSecond = secs;
+      const m = Math.floor(secs / 60);
+      const sec = String(secs % 60).padStart(2, "0");
+      el.time.textContent = `${m}:${sec}`;
+      el.time.setAttribute("aria-label", m > 0 ? `Noch ${m} Minuten ${secs % 60} Sekunden` : `Noch ${secs % 60} Sekunden`);
+    }
     const text =
       p > 0.75 ? "Noch viel Zeit" :
       p > 0.4 ? "Noch etwa die Hälfte" :
@@ -185,6 +226,7 @@
     if (session.paused) el.timer.setAttribute("data-paused", "");
     else el.timer.removeAttribute("data-paused");
     el.toggle.textContent = session.paused ? "Weiter" : "Anhalten";
+    el.phaseTitle.textContent = session.paused ? "Angehalten" : (session.phase === "focus" ? "Lernzeit" : "Pause");
   }
 
   el.toggle.addEventListener("click", () => {
@@ -212,13 +254,17 @@
       if (session.round >= total) {
         session.view = "done";
         saveSession();
-        renderStars(el.starsDone, { pop: withSound });
+        renderRounds(el.roundsDone);
+        if (withSound) animateLastDone(el.roundsDone);
+        el.doneText.textContent = total === 1
+          ? "Der Bleistift ist aufgebraucht. Du hast dich toll konzentriert."
+          : `Alle ${total} Bleistifte sind aufgebraucht. Du hast dich toll konzentriert.`;
         show("done");
         return;
       }
       session.view = "switch";
       el.switchTitle.textContent = "Super gemacht!";
-      el.switchText.textContent = "Zeit für eine kleine Pause.";
+      el.switchText.textContent = "Ein Bleistift ist aufgebraucht. Zeit für eine kleine Pause.";
       el.next.textContent = "Pause starten";
     } else {
       session.view = "switch";
@@ -227,7 +273,8 @@
       el.next.textContent = "Lernzeit starten";
     }
     saveSession();
-    renderStars(el.starsSwitch, { pop: withSound && session.phase === "focus" });
+    renderRounds(el.roundsSwitch);
+    if (withSound && session.phase === "focus") animateLastDone(el.roundsSwitch);
     show("switch");
   }
 
@@ -303,8 +350,8 @@
       session.view = "timer";
       phaseEnded(false);
     } else if (session.view === "done") {
-      renderStars(el.starsDone);
-      show("done");
+      session.view = "timer";
+      phaseEnded(false);
     }
     return true;
   }
@@ -375,6 +422,7 @@
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   el.installHint.hidden = !(isIOS && !isStandalone);
 
+  buildPencil(el.pencil);
   renderSettings();
   if (!resumeSession()) show("setup");
 

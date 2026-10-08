@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>Hausaufgaben-Timer</title>
   <meta name="description" content="Ein Timer für Grundschulkinder: Lernzeit und kurze Pausen, sichtbar als Bleistift, der immer kürzer wird.">
-  <meta name="theme-color" content="#f7faff">
+  <meta name="theme-color" content="#f2f4f8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -75,23 +75,14 @@
 
   <!-- Timer (für das Kind) -->
   <main id="screen-timer" class="screen" data-phase="focus">
-    <div class="timer-top">
-      <ol id="stars" class="stars" aria-label="Runden"></ol>
+    <ol id="rounds" class="rounds" aria-label="Runden"></ol>
+
+    <div class="readout">
+      <p id="phase-title" class="phase-label">Lernzeit</p>
+      <p id="time" class="time">15:00</p>
     </div>
 
-    <h2 id="phase-title" class="phase-title">Lernzeit</h2>
-
-    <div id="pencil" class="pencil" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="Noch die ganze Zeit">
-      <div class="pencil-track">
-        <div class="pencil-ghost"></div>
-        <div class="pencil-live">
-          <div class="pencil-eraser"></div>
-          <div class="pencil-ferrule"></div>
-          <div class="pencil-body"></div>
-        </div>
-      </div>
-      <div class="pencil-cone"><div class="pencil-lead"></div></div>
-    </div>
+    <div id="pencil" class="pencil pencil-main" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="Noch die ganze Zeit"></div>
 
     <div class="timer-controls">
       <button id="btn-toggle" class="btn btn-primary btn-big" type="button">Anhalten</button>
@@ -106,7 +97,7 @@
   <!-- Wechsel zwischen Lernzeit und Pause -->
   <main id="screen-switch" class="screen">
     <div class="switch-card">
-      <ol id="stars-switch" class="stars stars-big" aria-label="Runden"></ol>
+      <ol id="rounds-switch" class="rounds rounds-big" aria-label="Runden"></ol>
       <h2 id="switch-title">Super gemacht!</h2>
       <p id="switch-text">Zeit für eine kleine Pause.</p>
       <button id="btn-next" class="btn btn-primary btn-big" type="button">Pause starten</button>
@@ -116,9 +107,9 @@
   <!-- Geschafft -->
   <main id="screen-done" class="screen">
     <div class="switch-card">
-      <ol id="stars-done" class="stars stars-big" aria-label="Geschaffte Runden"></ol>
+      <ol id="rounds-done" class="rounds rounds-big" aria-label="Geschaffte Runden"></ol>
       <h2>Geschafft!</h2>
-      <p>Alle Runden sind fertig. Du hast dich toll konzentriert.</p>
+      <p id="done-text">Alle Bleistifte sind aufgebraucht. Du hast dich toll konzentriert.</p>
       <button id="btn-again" class="btn btn-primary btn-big" type="button">Nochmal</button>
       <button id="btn-home" class="btn btn-quiet" type="button">Einstellungen</button>
     </div>
