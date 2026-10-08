@@ -1,6 +1,6 @@
 // Offline-Unterstützung: App-Dateien werden beim ersten Besuch gespeichert.
 // Bei jeder Änderung an den Dateien VERSION erhöhen, damit iPhones die neue Version laden.
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = "hwt-" + VERSION;
 const FILES = [
   "./",
@@ -14,7 +14,7 @@ const FILES = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: "reload" })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
@@ -25,11 +25,11 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Erst Netz, bei Offline den Speicher – so kommen Updates sofort an.
+// Erst Netz (am Browser-Cache vorbei), bei Offline den Speicher – so kommen Updates sofort an.
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+  if (event.request.method !== "GET" || !event.request.url.startsWith(self.location.origin)) return;
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: "no-cache" })
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(event.request, copy)).catch(() => {});
