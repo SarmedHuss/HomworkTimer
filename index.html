@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
 
@@ -153,6 +153,7 @@
 
       <div class="p-links">
         <button type="button" id="open-history" class="btn btn-secondary"></button>
+        <button type="button" id="open-data" class="btn btn-secondary" data-i18n="plan.data"></button>
         <button type="button" class="btn btn-quiet" disabled data-i18n="plan.feedback"></button>
       </div>
 
@@ -242,6 +243,34 @@
     </div>
   </main>
 
+  <!-- Daten exportieren / sichern -->
+  <main id="screen-data" class="screen parent">
+    <div class="p-wrap">
+      <header class="p-bar">
+        <button type="button" id="data-back" class="link" data-i18n="history.back"></button>
+      </header>
+      <h1 class="h-title" data-i18n="data.title"></h1>
+      <p class="lead left" data-i18n="data.lead"></p>
+
+      <section class="card">
+        <h2 data-i18n="data.csvTitle"></h2>
+        <p id="data-csv-text"></p>
+        <button type="button" id="export-csv" class="btn btn-primary btn-block" data-i18n="data.csvButton"></button>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="data.backupTitle"></h2>
+        <p data-i18n="data.backupText"></p>
+        <button type="button" id="export-backup" class="btn btn-primary btn-block" data-i18n="data.backupButton"></button>
+        <button type="button" id="import-backup" class="btn btn-secondary btn-block" data-i18n="data.restoreButton"></button>
+        <input type="file" id="import-file" accept=".json,application/json" hidden>
+      </section>
+
+      <p id="data-status" class="status" role="status"></p>
+      <p class="help" data-i18n="data.privacy"></p>
+    </div>
+  </main>
+
   <!-- ================= KINDMODUS ================= -->
 
   <main id="screen-timer" class="screen" data-phase="focus">
@@ -296,8 +325,8 @@
   </main>
 
   <!-- ?v= bei jeder Änderung zusammen mit VERSION in sw.js erhöhen -->
-  <script src="i18n.js?v=7"></script>
-  <script src="app.js?v=7"></script>
+  <script src="i18n.js?v=8"></script>
+  <script src="app.js?v=8"></script>
   <script>
     (function () {
       function fail() {

@@ -11,6 +11,7 @@ Die App hat zwei Modi auf einem Gerät.
 2. **Planen:** Fach, Lernzeit, Pause, Runden, ob das Kind die Restzeit als Zahl sieht, Ton an/aus. Die Auswahl wird pro Kind gemerkt.
 3. **Bewerten:** Nach der Sitzung fünf kurze Fragen (Fokus, Hilfe, Stimmung des Kindes, eigene Anspannung, Schwierigkeit) und eine freie Notiz. Überspringen ist möglich.
 4. **Verlauf:** alle Sitzungen pro Kind mit Bewertung und Notiz.
+5. **Daten exportieren:** alle Sitzungen als CSV-Tabelle (Excel, Numbers) sowie eine vollständige Sicherung als JSON-Datei, die sich wieder laden lässt. Auf dem Handy über das Teilen-Menü, am Computer als Download.
 
 **Kindmodus**
 - Ein Bleistift wird während der Lernzeit von der Spitze her kürzer; oben zeigt ein kleiner Bleistift pro Runde den Fortschritt.

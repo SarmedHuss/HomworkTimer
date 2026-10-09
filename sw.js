@@ -1,13 +1,13 @@
 // Offline-Unterstützung: App-Dateien werden beim ersten Besuch gespeichert.
 // Bei jeder Änderung an den Dateien VERSION erhöhen, damit iPhones die neue Version laden.
-const VERSION = "v7";
+const VERSION = "v8";
 const CACHE = "hwt-" + VERSION;
 const FILES = [
   "./",
   "index.html",
-  "styles.css?v=7",
-  "app.js?v=7",
-  "i18n.js?v=7",
+  "styles.css?v=8",
+  "app.js?v=8",
+  "i18n.js?v=8",
   "manifest.webmanifest",
   "icons/icon-192.png",
   "icons/icon-512.png",

@@ -28,7 +28,7 @@
   const SPEED = Math.max(1, Number(new URLSearchParams(location.search).get("speed")) || 1);
 
   const $ = (id) => document.getElementById(id);
-  const SCREENS = ["profile", "plan", "rate", "history", "timer", "switch", "done"];
+  const SCREENS = ["profile", "plan", "rate", "history", "data", "timer", "switch", "done"];
 
   const el = {
     // Profil
@@ -553,6 +553,119 @@
   }
 
   el.historyBack.addEventListener("click", openPlan);
+
+  /* ---------- Daten exportieren / Sicherung ---------- */
+
+  const BACKUP_APP = "homework-timer";
+  const status = $("data-status");
+
+  function openData() {
+    const kids = data.profiles.length;
+    $("data-csv-text").textContent = t("data.csvText", data.sessions.length, kids);
+    status.textContent = "";
+    status.classList.remove("error");
+    show("data");
+  }
+
+  const today = () => new Date().toISOString().slice(0, 10);
+  const pad = (n) => String(n).padStart(2, "0");
+  const isoDate = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const hhmm = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+  function buildCsv() {
+    // Deutsch: Semikolon (Excel DE erwartet das), Englisch: Komma
+    const sep = data.lang === "de" ? ";" : ",";
+    const cell = (v) => {
+      const s = v == null ? "" : String(v);
+      return /[";,\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const head = ["child", "grade", "date", "start", "subject", "focus", "break", "roundsPlanned", "roundsDone",
+      "pauses", "early", "rFocus", "rHelp", "rChild", "rParent", "rDiff", "note"].map((k) => t("csv." + k));
+    const rows = [head];
+    const sorted = [...data.sessions].sort((a, b) => a.startedAt - b.startedAt);
+    for (const s of sorted) {
+      const p = profileById(s.profileId);
+      const d = new Date(s.startedAt);
+      const r = s.rating || {};
+      rows.push([
+        p ? p.name : "", p ? p.grade : "", isoDate(d), hhmm(d),
+        s.subject ? subjectName(s.subject, s.subjectLabel) : "",
+        s.focus, s.break, s.roundsPlanned, s.roundsDone, s.pauses || 0,
+        t(s.endedEarly ? "csv.yes" : "csv.no"),
+        r.focus ?? "", r.help ?? "", r.childMood ?? "", r.parentMood ?? "",
+        r.difficulty ? t("rate.diff." + r.difficulty) : "",
+        s.note || "",
+      ]);
+    }
+    // BOM, damit Excel Umlaute richtig liest
+    return "\ufeff" + rows.map((row) => row.map(cell).join(sep)).join("\r\n") + "\r\n";
+  }
+
+  // Auf Handys über das Teilen-Menü (Dateien, AirDrop, Mail), sonst als Download
+  async function deliverFile(name, type, content) {
+    const blob = new Blob([content], { type });
+    const isMobile = isIOS || /android/i.test(navigator.userAgent);
+    if (isMobile && navigator.canShare) {
+      try {
+        const file = new File([blob], name, { type });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: name });
+          return true;
+        }
+      } catch (err) {
+        if (err && err.name === "AbortError") return false; // Teilen abgebrochen
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    return true;
+  }
+
+  function setStatus(text, isError) {
+    status.textContent = text;
+    status.classList.toggle("error", !!isError);
+  }
+
+  $("export-csv").addEventListener("click", async () => {
+    const name = `${t("data.file")}-${today()}.csv`;
+    if (await deliverFile(name, "text/csv;charset=utf-8", buildCsv())) setStatus(t("data.done", { file: name }));
+  });
+
+  $("export-backup").addEventListener("click", async () => {
+    const name = `${t("data.fileBackup")}-${today()}.json`;
+    const backup = { app: BACKUP_APP, format: 1, exportedAt: new Date().toISOString(), data };
+    if (await deliverFile(name, "application/json", JSON.stringify(backup, null, 2))) setStatus(t("data.done", { file: name }));
+  });
+
+  $("import-backup").addEventListener("click", () => $("import-file").click());
+
+  $("import-file").addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    let backup;
+    try { backup = JSON.parse(await file.text()); } catch { backup = null; }
+    const d = backup && backup.data;
+    if (!backup || backup.app !== BACKUP_APP || !d || !Array.isArray(d.profiles) || !Array.isArray(d.sessions)) {
+      setStatus(t("data.restoreBad"), true);
+      return;
+    }
+    const when = backup.exportedAt ? dateFmt.format(new Date(backup.exportedAt)) : "?";
+    if (!confirm(t("data.restoreConfirm", when, d.profiles.length, d.sessions.length))) return;
+    d.lang = data.lang; // aktuelle Sprache behalten
+    store.set(DATA_KEY, d);
+    store.remove(RUN_KEY);
+    location.reload(); // lädt neu und wendet alle Anpassungen auf die geladenen Daten an
+  });
+
+  $("open-data").addEventListener("click", openData);
+  $("data-back").addEventListener("click", openPlan);
 
   /* =========================================================
      KINDMODUS
