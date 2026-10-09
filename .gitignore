@@ -2,3 +2,5 @@
 /*.png
 _site/
 .DS_Store
+/*.json
+!/manifest.webmanifest
