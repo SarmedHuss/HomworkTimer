@@ -4,19 +4,26 @@ Ein Timer für Grundschulkinder, die mit ihren Eltern Hausaufgaben machen. Inspi
 
 ## So funktioniert's
 
-1. **Eltern stellen ein:** Lernzeit (5–25 Min), Pause (2–8 Min), Anzahl Runden (1–4), Ton an/aus. Die Auswahl wird gespeichert.
-2. **Lernzeit:** Ein gelber Bleistift wird kürzer. Oben zeigen Sterne, welche Runde gerade läuft.
-3. **Wechsel:** Am Ende ertönt ein kurzer Klang, das Kind bekommt einen Stern. Die Pause startet erst nach einem Tipp – so geht keine Pause unbemerkt verloren.
-4. **Pause:** Der Bleistift ist türkis.
-5. **Geschafft:** Alle Sterne leuchten.
+Die App hat zwei Modi auf einem Gerät.
+
+**Elternmodus**
+1. **Kinderprofile:** Spitzname und Klasse, mehrere Kinder pro Gerät. Aus der Klasse schlägt die App Lern- und Pausenzeiten vor (Klasse 1: 10/3 Min … Klasse 4: 20/5 Min).
+2. **Planen:** Fach, Lernzeit, Pause, Runden, ob das Kind die Restzeit als Zahl sieht, Ton an/aus. Die Auswahl wird pro Kind gemerkt.
+3. **Bewerten:** Nach der Sitzung fünf kurze Fragen (Fokus, Hilfe, Stimmung des Kindes, eigene Anspannung, Schwierigkeit) und eine freie Notiz. Überspringen ist möglich.
+4. **Verlauf:** alle Sitzungen pro Kind mit Bewertung und Notiz.
+
+**Kindmodus**
+- Ein Bleistift wird während der Lernzeit von der Spitze her kürzer; oben zeigt ein kleiner Bleistift pro Runde den Fortschritt.
+- Die Pause startet erst nach einem Tipp. **Beenden** muss man gedrückt halten.
+- Am Ende gibt das Kind das Handy zurück; es folgt die Bewertung.
 
 Weitere Details:
 
-- **Anhalten/Weiter** für Unterbrechungen.
-- **Beenden** muss man gedrückt halten, damit es nicht aus Versehen passiert.
 - Der Bildschirm bleibt während des Timers an (Wake Lock, ab iOS 16.4).
 - Der Timer rechnet mit echten Uhrzeiten: Wird die App kurz verlassen oder neu geladen, läuft er korrekt weiter.
+- Alle Daten bleiben im Browser auf dem Gerät (localStorage). Löschen über „Profil bearbeiten“.
 - Funktioniert nach dem ersten Öffnen auch offline.
+- Konzept: siehe Dokument „Konzept Elternmodus – Hausaufgaben-Timer“.
 
 ## Auf dem iPhone verwenden
 
@@ -49,9 +56,9 @@ Nach Änderungen an den App-Dateien in `sw.js` die `VERSION` erhöhen. Installie
 
 | Datei | Inhalt |
 |---|---|
-| `index.html` | Bildschirme: Einstellungen, Timer, Wechsel, Geschafft |
+| `index.html` | Bildschirme: Profil, Planen, Bewerten, Verlauf (Eltern); Timer, Wechsel, Geschafft (Kind) |
 | `styles.css` | Gestaltung inkl. Bleistift |
-| `app.js` | Timer-Logik, Speichern, Ton, Wake Lock |
+| `app.js` | Profile, Planung, Bewertung, Verlauf, Timer-Logik, Speichern, Ton, Wake Lock |
 | `sw.js` | Offline-Unterstützung |
 | `manifest.webmanifest`, `icons/` | Installation als App |
 

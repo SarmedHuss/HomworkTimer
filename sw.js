@@ -1,6 +1,6 @@
 // Offline-Unterstützung: App-Dateien werden beim ersten Besuch gespeichert.
 // Bei jeder Änderung an den Dateien VERSION erhöhen, damit iPhones die neue Version laden.
-const VERSION = "v3";
+const VERSION = "v4";
 const CACHE = "hwt-" + VERSION;
 const FILES = [
   "./",
