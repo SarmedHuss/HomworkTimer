@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body>
 
@@ -51,6 +51,12 @@
           <p class="help" data-i18n="profile.gradeHelp"></p>
         </fieldset>
 
+        <fieldset class="choice" id="profile-subjects-wrap">
+          <legend data-i18n="profile.subjects"></legend>
+          <div class="chips removable" id="profile-subjects"></div>
+          <p class="help" data-i18n="profile.subjectsHelp"></p>
+        </fieldset>
+
         <button type="submit" class="btn btn-primary btn-big" data-i18n="profile.save"></button>
         <button type="button" id="profile-cancel" class="btn btn-quiet" data-i18n="profile.cancel"></button>
         <button type="button" id="profile-delete" class="btn btn-danger" data-i18n="profile.delete"></button>
@@ -82,13 +88,10 @@
       <form id="plan-form" class="p-form">
         <fieldset class="choice">
           <legend data-i18n="plan.subject"></legend>
-          <div class="chips" data-name="subject">
-            <button type="button" value="math" data-i18n="subj.math"></button>
-            <button type="button" value="language" data-i18n="subj.language"></button>
-            <button type="button" value="science" data-i18n="subj.science"></button>
-            <button type="button" value="foreign" data-i18n="subj.foreign"></button>
-            <button type="button" value="reading" data-i18n="subj.reading"></button>
-            <button type="button" value="other" data-i18n="subj.other"></button>
+          <div class="chips" data-name="subject" id="subject-chips"></div>
+          <div id="subject-add" class="add-row" hidden>
+            <input id="subject-input" type="text" maxlength="24" autocomplete="off" data-i18n-ph="plan.subjectPh">
+            <button type="button" id="subject-save" class="btn btn-small" data-i18n="plan.subjectAdd"></button>
           </div>
         </fieldset>
 
@@ -293,8 +296,8 @@
   </main>
 
   <!-- ?v= bei jeder Änderung zusammen mit VERSION in sw.js erhöhen -->
-  <script src="i18n.js?v=6"></script>
-  <script src="app.js?v=6"></script>
+  <script src="i18n.js?v=7"></script>
+  <script src="app.js?v=7"></script>
   <script>
     (function () {
       function fail() {

@@ -33,6 +33,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 html, body { margin: 0; height: 100%; }
 
@@ -192,6 +193,7 @@ h1, h2, p { margin: 0; }
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-color: var(--line);
+  white-space: nowrap;
 }
 
 /* Kinder-Auswahl */
@@ -224,9 +226,11 @@ h1, h2, p { margin: 0; }
 
 .plan-title {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  column-gap: 12px;
+  row-gap: 0;
   margin-top: -4px;
 }
 
@@ -310,6 +314,42 @@ h1, h2, p { margin: 0; }
 .chips button[aria-pressed="true"] {
   background: var(--pencil);
   border-color: var(--pencil-dark);
+}
+.chips .chip-add {
+  color: var(--ink-soft);
+  border-style: dashed;
+  background: transparent;
+}
+.chips.removable button::after {
+  content: "×";
+  margin-left: 8px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.chips.removable .empty { font-size: .95rem; }
+
+.add-row { display: flex; gap: 8px; margin-top: 10px; }
+.add-row[hidden] { display: none; }
+.add-row input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 9px 16px;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.add-row input:focus { outline: none; }
+.btn-small {
+  background: var(--ink);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 9px 18px;
 }
 
 /* Eingabefelder */

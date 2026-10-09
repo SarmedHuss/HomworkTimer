@@ -20,6 +20,9 @@
     4: { focus: "20", break: "5", rounds: "3" },
   };
   const PLAN_EXTRAS = { subject: "", showTime: "on", sound: "on" };
+  // Standardfächer (übersetzt); eigene Fächer haben IDs "c_…" und einen festen Namen
+  const BUILTIN_SUBJECTS = ["math", "language", "science", "foreign", "reading", "other"];
+  const defaultSubjects = () => BUILTIN_SUBJECTS.map((id) => ({ id }));
 
   // ?speed=60 lässt eine Minute in einer Sekunde ablaufen (zum Ausprobieren).
   const SPEED = Math.max(1, Number(new URLSearchParams(location.search).get("speed")) || 1);
@@ -104,6 +107,7 @@
   const OLD_SUBJECTS = { Mathe: "math", Deutsch: "language", Sachunterricht: "science", Englisch: "foreign", Lesen: "reading", Anderes: "other" };
   for (const p of data.profiles) if (OLD_SUBJECTS[p.plan?.subject]) p.plan.subject = OLD_SUBJECTS[p.plan.subject];
   for (const x of data.sessions) if (OLD_SUBJECTS[x.subject]) x.subject = OLD_SUBJECTS[x.subject];
+  for (const p of data.profiles) if (!Array.isArray(p.subjects)) p.subjects = defaultSubjects();
 
   const saveData = () => store.set(DATA_KEY, data);
 
@@ -126,7 +130,16 @@
     return entry.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
   }
 
-  const subjectName = (key) => key ? t("subj." + key) : t("subj.none");
+  // Name eines Fachs: Standardfach übersetzt, eigenes Fach mit gespeichertem Namen
+  function subjectName(key, label) {
+    if (!key) return t("subj.none");
+    if (BUILTIN_SUBJECTS.includes(key)) return t("subj." + key);
+    for (const p of data.profiles) {
+      const s = (p.subjects || []).find((x) => x.id === key);
+      if (s && s.name) return s.name;
+    }
+    return label || "–";
+  }
 
   let dateFmt, timeFmt;
   function applyLanguage() {
@@ -197,9 +210,42 @@
     markPressed(el.profileGrade, profileGrade);
     el.profileCancel.hidden = data.profiles.length === 0;
     el.profileDelete.hidden = !p;
+    // Fächer nur beim Bearbeiten zeigen; Änderungen gelten erst mit „Speichern“
+    editSubjects = p ? p.subjects.map((x) => ({ ...x })) : null;
+    $("profile-subjects-wrap").hidden = !p;
+    renderProfileSubjects();
     show("profile");
     if (!p) setTimeout(() => el.profileName.focus(), 50);
   }
+
+  let editSubjects = null;
+
+  function renderProfileSubjects() {
+    const box = $("profile-subjects");
+    box.innerHTML = "";
+    if (!editSubjects) return;
+    if (!editSubjects.length) {
+      const e = document.createElement("p");
+      e.className = "empty";
+      e.textContent = t("profile.noSubjects");
+      box.appendChild(e);
+    }
+    for (const s of editSubjects) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.value = s.id;
+      b.textContent = subjectName(s.id);
+      b.setAttribute("aria-label", t("profile.removeSubject", { name: subjectName(s.id) }));
+      box.appendChild(b);
+    }
+  }
+
+  $("profile-subjects").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b || !editSubjects) return;
+    editSubjects = editSubjects.filter((x) => x.id !== b.value);
+    renderProfileSubjects();
+  });
 
   el.profileGrade.addEventListener("click", (e) => {
     const btn = e.target.closest("button");
@@ -218,8 +264,12 @@
       if (p.grade !== grade) Object.assign(p.plan, GRADE_DEFAULTS[grade]);
       p.name = name;
       p.grade = grade;
+      if (editSubjects) {
+        p.subjects = editSubjects;
+        if (!p.subjects.some((x) => x.id === p.plan.subject)) p.plan.subject = "";
+      }
     } else {
-      const p = { id: uid(), name, grade, plan: { ...PLAN_EXTRAS, ...GRADE_DEFAULTS[grade] } };
+      const p = { id: uid(), name, grade, subjects: defaultSubjects(), plan: { ...PLAN_EXTRAS, ...GRADE_DEFAULTS[grade] } };
       data.profiles.push(p);
       data.activeId = p.id;
     }
@@ -248,6 +298,7 @@
     if (!p) { openProfile(null); return; }
     data.activeId = p.id;
     renderKids();
+    showSubjectAdd(false);
     renderPlan();
     show("plan");
   }
@@ -273,6 +324,7 @@
     const p = activeProfile();
     const plan = p.plan;
     el.planHeading.textContent = t("plan.heading", { name: p.name });
+    renderSubjectChips(p);
     for (const group of el.planForm.querySelectorAll("[data-name]")) {
       markPressed(group, plan[group.dataset.name]);
     }
@@ -285,7 +337,58 @@
     el.openHistory.textContent = t("plan.history", count);
   }
 
+  function renderSubjectChips(p) {
+    const box = $("subject-chips");
+    box.innerHTML = "";
+    if (p.plan.subject && !p.subjects.some((x) => x.id === p.plan.subject)) p.plan.subject = "";
+    for (const s of p.subjects) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.value = s.id;
+      b.textContent = subjectName(s.id);
+      box.appendChild(b);
+    }
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "chip-add";
+    add.value = "__add";
+    add.textContent = t("plan.addSubject");
+    box.appendChild(add);
+  }
+
+  function showSubjectAdd(open) {
+    $("subject-add").hidden = !open;
+    $("subject-input").value = "";
+    if (open) setTimeout(() => $("subject-input").focus(), 30);
+  }
+
+  function saveSubject() {
+    const name = $("subject-input").value.trim().replace(/\s+/g, " ");
+    const p = activeProfile();
+    if (name) {
+      const existing = p.subjects.find((x) => subjectName(x.id).toLowerCase() === name.toLowerCase());
+      if (existing) {
+        p.plan.subject = existing.id;
+      } else {
+        const s = { id: "c_" + uid(), name };
+        p.subjects.push(s);
+        p.plan.subject = s.id;
+      }
+      saveData();
+    }
+    showSubjectAdd(false);
+    renderPlan();
+  }
+
+  $("subject-save").addEventListener("click", saveSubject);
+  $("subject-input").addEventListener("keydown", (e) => {
+    // Enter würde sonst das Planungsformular abschicken und den Timer starten
+    if (e.key === "Enter") { e.preventDefault(); saveSubject(); }
+    if (e.key === "Escape") { e.preventDefault(); showSubjectAdd(false); }
+  });
+
   el.planForm.addEventListener("click", (e) => {
+    if (e.target.closest(".chip-add")) { showSubjectAdd($("subject-add").hidden); return; }
     const btn = e.target.closest("[data-name] button");
     if (!btn) return;
     const p = activeProfile();
@@ -373,7 +476,7 @@
   const PARENT_FACE = { 3: "😌", 2: "😬", 1: "😤" };
 
   function describeSession(s) {
-    const parts = [subjectName(s.subject), t("history.rounds", s.roundsDone, s.roundsPlanned, s.focus)];
+    const parts = [subjectName(s.subject, s.subjectLabel), t("history.rounds", s.roundsDone, s.roundsPlanned, s.focus)];
     if (s.endedEarly) parts.push(t("history.early"));
     return parts.join(" · ");
   }
@@ -399,7 +502,7 @@
       const top = document.createElement("div");
       top.className = "h-top";
       const subj = document.createElement("span");
-      subj.textContent = subjectName(s.subject);
+      subj.textContent = subjectName(s.subject, s.subjectLabel);
       const when = document.createElement("span");
       when.className = "h-date";
       const d = new Date(s.startedAt);
@@ -660,6 +763,7 @@
       id: run.sessionId,
       profileId: run.profileId,
       subject: run.plan.subject,
+      subjectLabel: run.plan.subject ? subjectName(run.plan.subject) : "",
       focus: Number(run.plan.focus),
       break: Number(run.plan.break),
       roundsPlanned: Number(run.plan.rounds),
