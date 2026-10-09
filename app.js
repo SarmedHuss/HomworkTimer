@@ -116,8 +116,11 @@
   }
 
   // t("key", ...args): Text holen; {name}/{v} ersetzen oder Funktion aufrufen
+  // Ohne Texte nicht starten: dann zeigt index.html den Hinweis „Neu laden“
+  if (!window.I18N) throw new Error("i18n.js nicht geladen");
+  const I18N = window.I18N;
   function t(key, ...args) {
-    const entry = (I18N[data.lang] && I18N[data.lang][key]) ?? I18N.de[key] ?? key;
+    const entry = (I18N[data.lang] && I18N[data.lang][key]) ?? (I18N.de && I18N.de[key]) ?? key;
     if (typeof entry === "function") return entry(...args);
     const vars = args[0] || {};
     return entry.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));

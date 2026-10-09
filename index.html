@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
 
@@ -280,7 +280,36 @@
     </div>
   </main>
 
-  <script src="i18n.js"></script>
-  <script src="app.js"></script>
+  <!-- Sicherheitsnetz: falls die App nicht startet, statt leerer Seite einen Hinweis zeigen -->
+  <main id="screen-error" class="screen parent">
+    <div class="p-wrap">
+      <header class="p-head">
+        <img src="icons/icon-192.png" alt="" class="app-mark" width="48" height="48">
+        <h1>Die App konnte nicht starten</h1>
+        <p class="lead">Meist hilft neu laden. / The app couldn't start. Reloading usually fixes it.</p>
+      </header>
+      <button type="button" id="btn-reload" class="btn btn-primary btn-big">Neu laden / Reload</button>
+    </div>
+  </main>
+
+  <!-- ?v= bei jeder Änderung zusammen mit VERSION in sw.js erhöhen -->
+  <script src="i18n.js?v=6"></script>
+  <script src="app.js?v=6"></script>
+  <script>
+    (function () {
+      function fail() {
+        if (document.querySelector(".screen[data-active]")) return;
+        document.getElementById("screen-error").setAttribute("data-active", "");
+      }
+      window.addEventListener("error", function () { setTimeout(fail, 0); });
+      window.addEventListener("load", function () { setTimeout(fail, 300); });
+      document.getElementById("btn-reload").addEventListener("click", function () {
+        var jobs = [];
+        if (window.caches) jobs.push(caches.keys().then(function (k) { return Promise.all(k.map(function (n) { return caches.delete(n); })); }));
+        if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (r) { return Promise.all(r.map(function (x) { return x.unregister(); })); }));
+        Promise.all(jobs).catch(function () {}).then(function () { location.reload(); });
+      });
+    })();
+  </script>
 </body>
 </html>

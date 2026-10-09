@@ -51,7 +51,7 @@ Vom iPhone im selben WLAN: `http://<IP-des-Rechners>:8000`.
 Jeder Push auf `main` veröffentlicht die App automatisch über `.github/workflows/pages.yml`.
 Einmalig nötig: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
-Nach Änderungen an den App-Dateien in `sw.js` die `VERSION` erhöhen. Installierte Apps laden die neue Version dann beim nächsten Öffnen automatisch.
+Nach Änderungen an den App-Dateien die Versionsnummer erhöhen: `VERSION` in `sw.js` und `?v=` an den Dateien in `index.html` und `sw.js` (alle gleich). So passen Seite und Skripte immer zusammen, und installierte Apps laden die neue Version beim nächsten Öffnen automatisch.
 
 ## Dateien
 
