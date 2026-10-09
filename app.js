@@ -100,7 +100,56 @@
   if (!data || !Array.isArray(data.profiles)) data = { profiles: [], activeId: null, sessions: [] };
   for (const k of OLD_KEYS) store.remove(k);
 
+  // Fächer werden sprachneutral gespeichert; alte deutsche Werte umschreiben
+  const OLD_SUBJECTS = { Mathe: "math", Deutsch: "language", Sachunterricht: "science", Englisch: "foreign", Lesen: "reading", Anderes: "other" };
+  for (const p of data.profiles) if (OLD_SUBJECTS[p.plan?.subject]) p.plan.subject = OLD_SUBJECTS[p.plan.subject];
+  for (const x of data.sessions) if (OLD_SUBJECTS[x.subject]) x.subject = OLD_SUBJECTS[x.subject];
+
   const saveData = () => store.set(DATA_KEY, data);
+
+  /* ---------- Sprache ---------- */
+
+  const LANGS = ["de", "en"];
+  if (!LANGS.includes(data.lang)) {
+    const nav = (navigator.languages && navigator.languages[0]) || navigator.language || "de";
+    data.lang = nav.toLowerCase().startsWith("de") ? "de" : "en";
+  }
+
+  // t("key", ...args): Text holen; {name}/{v} ersetzen oder Funktion aufrufen
+  function t(key, ...args) {
+    const entry = (I18N[data.lang] && I18N[data.lang][key]) ?? I18N.de[key] ?? key;
+    if (typeof entry === "function") return entry(...args);
+    const vars = args[0] || {};
+    return entry.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+  }
+
+  const subjectName = (key) => key ? t("subj." + key) : t("subj.none");
+
+  let dateFmt, timeFmt;
+  function applyLanguage() {
+    document.documentElement.lang = data.lang;
+    document.title = t("app.title");
+    document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute("content", t("app.short"));
+    for (const n of document.querySelectorAll("[data-i18n]")) n.textContent = t(n.dataset.i18n);
+    for (const n of document.querySelectorAll("[data-i18n-ph]")) n.placeholder = t(n.dataset.i18nPh);
+    for (const n of document.querySelectorAll("[data-i18n-aria]")) n.setAttribute("aria-label", t(n.dataset.i18nAria));
+    for (const b of document.querySelectorAll("[data-lang]")) b.setAttribute("aria-pressed", String(b.dataset.lang === data.lang));
+    const locale = data.lang === "de" ? "de-DE" : "en-US";
+    dateFmt = new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", month: "numeric" });
+    timeFmt = new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" });
+  }
+
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-lang]");
+    if (!b || b.dataset.lang === data.lang) return;
+    data.lang = b.dataset.lang;
+    saveData();
+    applyLanguage();
+    // aktuellen Elternbildschirm neu aufbauen
+    const active = document.querySelector(".screen[data-active]")?.id;
+    if (active === "screen-plan") openPlan();
+    else if (active === "screen-profile") openProfile(editingId);
+  });
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const activeProfile = () => data.profiles.find((p) => p.id === data.activeId) || data.profiles[0] || null;
   const profileById = (id) => data.profiles.find((p) => p.id === id) || null;
@@ -139,7 +188,7 @@
   function openProfile(id) {
     editingId = id;
     const p = id ? profileById(id) : null;
-    el.profileTitle.textContent = p ? "Profil bearbeiten" : (data.profiles.length ? "Neues Kind" : "Für wen ist die Lernzeit?");
+    el.profileTitle.textContent = t(p ? "profile.titleEdit" : (data.profiles.length ? "profile.titleNew" : "profile.titleFirst"));
     el.profileName.value = p ? p.name : "";
     profileGrade = p ? String(p.grade) : "2";
     markPressed(el.profileGrade, profileGrade);
@@ -181,10 +230,7 @@
     const p = profileById(editingId);
     if (!p) return;
     const count = data.sessions.filter((s) => s.profileId === p.id).length;
-    const msg = count
-      ? `${p.name} und ${count} gespeicherte Sitzung${count === 1 ? "" : "en"} löschen? Das lässt sich nicht rückgängig machen.`
-      : `${p.name} löschen?`;
-    if (!confirm(msg)) return;
+    if (!confirm(t("profile.confirmDelete", p.name, count))) return;
     data.profiles = data.profiles.filter((x) => x.id !== p.id);
     data.sessions = data.sessions.filter((s) => s.profileId !== p.id);
     data.activeId = data.profiles[0]?.id || null;
@@ -223,7 +269,7 @@
   function renderPlan() {
     const p = activeProfile();
     const plan = p.plan;
-    el.planHeading.textContent = `Lernzeit für ${p.name}`;
+    el.planHeading.textContent = t("plan.heading", { name: p.name });
     for (const group of el.planForm.querySelectorAll("[data-name]")) {
       markPressed(group, plan[group.dataset.name]);
     }
@@ -231,10 +277,9 @@
     const total = r * Number(plan.focus) + (r - 1) * Number(plan.break);
     const d = GRADE_DEFAULTS[p.grade];
     const isDefault = d.focus === plan.focus && d.break === plan.break && d.rounds === plan.rounds;
-    const what = r === 1 ? `Eine Runde mit ${plan.focus} Minuten` : `${r} Runden, zusammen etwa ${total} Minuten`;
-    el.summary.textContent = isDefault ? `${what}. Vorschlag für Klasse ${p.grade}.` : `${what}.`;
+    el.summary.textContent = t("plan.summary", r, plan.focus, total, p.grade, isDefault);
     const count = data.sessions.filter((s) => s.profileId === p.id).length;
-    el.openHistory.textContent = count ? `Verlauf ansehen (${count})` : "Verlauf ansehen";
+    el.openHistory.textContent = t("plan.history", count);
   }
 
   el.planForm.addEventListener("click", (e) => {
@@ -280,9 +325,10 @@
     el.rateNote.value = "";
     for (const group of el.rateForm.querySelectorAll("[data-name]")) markPressed(group, null);
     const p = profileById(s.profileId);
-    const name = p ? p.name : "dein Kind";
-    for (const n of el.rateForm.querySelectorAll(".kid-name")) n.textContent = name;
-    el.rateHeading.textContent = `Wie lief's bei ${name}?`;
+    const name = p ? p.name : t("rate.kidFallback");
+    $("q-focus").textContent = t("rate.focusQ", { name });
+    $("q-child").textContent = t("rate.childQ", { name });
+    el.rateHeading.textContent = t("rate.heading", { name });
     el.rateSub.textContent = describeSession(s);
     show("rate");
   }
@@ -320,26 +366,18 @@
 
   /* ---------- Verlauf ---------- */
 
-  const WORDS = {
-    focus: { 5: "sehr gut", 4: "gut", 3: "mittel", 2: "wenig", 1: "kaum" },
-    help: { 5: "nichts", 4: "wenig", 3: "etwas", 2: "viel", 1: "ständig" },
-    childMood: { 3: "😊 gut", 2: "😐 gemischt", 1: "😣 frustriert" },
-    parentMood: { 3: "😌 entspannt", 2: "😬 angespannt", 1: "😤 genervt" },
-    difficulty: { easy: "zu leicht", ok: "passend", hard: "zu schwer" },
-  };
-
-  const dateFmt = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "numeric", month: "numeric" });
-  const timeFmt = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit" });
+  const CHILD_FACE = { 3: "😊", 2: "😐", 1: "😣" };
+  const PARENT_FACE = { 3: "😌", 2: "😬", 1: "😤" };
 
   function describeSession(s) {
-    const subject = s.subject || "Hausaufgaben";
-    const rounds = `${s.roundsDone} von ${s.roundsPlanned} Runde${s.roundsPlanned === 1 ? "" : "n"}`;
-    return `${subject} · ${rounds} à ${s.focus} Min${s.endedEarly ? " · vorzeitig beendet" : ""}`;
+    const parts = [subjectName(s.subject), t("history.rounds", s.roundsDone, s.roundsPlanned, s.focus)];
+    if (s.endedEarly) parts.push(t("history.early"));
+    return parts.join(" · ");
   }
 
   function openHistory() {
     const p = activeProfile();
-    el.historyHeading.textContent = `Verlauf von ${p.name}`;
+    el.historyHeading.textContent = t("history.heading", { name: p.name });
     const list = data.sessions
       .filter((s) => s.profileId === p.id)
       .sort((a, b) => b.startedAt - a.startedAt);
@@ -349,9 +387,7 @@
 
     const week = list.filter((s) => Date.now() - s.startedAt < 7 * 864e5);
     const pencils = week.reduce((n, s) => n + s.roundsDone, 0);
-    el.historyStats.textContent = list.length
-      ? `Diese Woche: ${week.length} Sitzung${week.length === 1 ? "" : "en"}, ${pencils} Bleistift${pencils === 1 ? "" : "e"} verbraucht.`
-      : "";
+    el.historyStats.textContent = list.length ? t("history.stats", week.length, pencils) : "";
 
     for (const s of list) {
       const li = document.createElement("li");
@@ -360,7 +396,7 @@
       const top = document.createElement("div");
       top.className = "h-top";
       const subj = document.createElement("span");
-      subj.textContent = s.subject || "Hausaufgaben";
+      subj.textContent = subjectName(s.subject);
       const when = document.createElement("span");
       when.className = "h-date";
       const d = new Date(s.startedAt);
@@ -369,9 +405,9 @@
 
       const meta = document.createElement("div");
       meta.className = "h-meta";
-      const parts = [`${s.roundsDone} von ${s.roundsPlanned} Runden à ${s.focus} Min`];
-      if (s.pauses) parts.push(`${s.pauses}× angehalten`);
-      if (s.endedEarly) parts.push("vorzeitig beendet");
+      const parts = [t("history.rounds", s.roundsDone, s.roundsPlanned, s.focus)];
+      if (s.pauses) parts.push(t("history.paused", s.pauses));
+      if (s.endedEarly) parts.push(t("history.early"));
       meta.textContent = parts.join(" · ");
 
       li.append(top, meta);
@@ -386,16 +422,16 @@
           tags.appendChild(t);
         };
         const r = s.rating;
-        if (r.focus) add(`Fokus: ${WORDS.focus[r.focus]}`);
-        if (r.help) add(`Hilfe: ${WORDS.help[r.help]}`);
-        if (r.childMood) add(`Kind: ${WORDS.childMood[r.childMood]}`);
-        if (r.parentMood) add(`Du: ${WORDS.parentMood[r.parentMood]}`);
-        if (r.difficulty) add(WORDS.difficulty[r.difficulty]);
+        if (r.focus) add(t("tag.focus", { v: t("rate.focus." + r.focus) }));
+        if (r.help) add(t("tag.help", { v: t("rate.help." + r.help) }));
+        if (r.childMood) add(t("tag.child", { v: `${CHILD_FACE[r.childMood]} ${t("rate.child." + r.childMood)}` }));
+        if (r.parentMood) add(t("tag.parent", { v: `${PARENT_FACE[r.parentMood]} ${t("rate.parent." + r.parentMood)}` }));
+        if (r.difficulty) add(t("rate.diff." + r.difficulty));
         li.appendChild(tags);
       } else {
         const un = document.createElement("div");
         un.className = "h-unrated";
-        un.textContent = "nicht bewertet";
+        un.textContent = t("history.unrated");
         li.appendChild(un);
       }
 
@@ -445,7 +481,7 @@
       li.appendChild(pencil);
       list.appendChild(li);
     }
-    list.setAttribute("aria-label", `${done} von ${total} Bleistiften verbraucht`);
+    list.setAttribute("aria-label", t("rounds.aria", done, total));
   }
 
   function animateLastDone(list) {
@@ -481,9 +517,9 @@
   }
 
   function phaseLabel() {
-    if (run.paused) return "Angehalten";
-    if (run.phase === "break") return "Pause";
-    return run.plan.subject ? `${run.plan.subject} · Lernzeit` : "Lernzeit";
+    if (run.paused) return t("timer.paused");
+    if (run.phase === "break") return t("timer.break");
+    return run.plan.subject ? `${subjectName(run.plan.subject)} · ${t("timer.focus")}` : t("timer.focus");
   }
 
   function showTimer() {
@@ -528,12 +564,12 @@
       lastSecond = secs;
       const m = Math.floor(secs / 60);
       el.time.textContent = `${m}:${String(secs % 60).padStart(2, "0")}`;
-      el.time.setAttribute("aria-label", m > 0 ? `Noch ${m} Minuten ${secs % 60} Sekunden` : `Noch ${secs % 60} Sekunden`);
+      el.time.setAttribute("aria-label", t("timer.left", m, secs % 60));
     }
     const text =
-      p > 0.75 ? "Noch viel Zeit" :
-      p > 0.4 ? "Noch etwa die Hälfte" :
-      p > 0.15 ? "Nicht mehr viel Zeit" : "Gleich geschafft";
+      p > 0.75 ? t("timer.p1") :
+      p > 0.4 ? t("timer.p2") :
+      p > 0.15 ? t("timer.p3") : t("timer.p4");
     if (text !== lastText) {
       lastText = text;
       el.pencil.setAttribute("aria-valuetext", text);
@@ -544,7 +580,7 @@
   function renderPaused() {
     if (run.paused) el.timer.setAttribute("data-paused", "");
     else el.timer.removeAttribute("data-paused");
-    el.toggle.textContent = run.paused ? "Weiter" : "Anhalten";
+    el.toggle.textContent = t(run.paused ? "timer.resume" : "timer.pause");
     el.phaseTitle.textContent = phaseLabel();
   }
 
@@ -577,21 +613,19 @@
         saveRun();
         renderRounds(el.roundsDone);
         if (withSound) animateLastDone(el.roundsDone);
-        el.doneText.textContent = total === 1
-          ? "Der Bleistift ist aufgebraucht. Du hast dich toll konzentriert."
-          : `Alle ${total} Bleistifte sind aufgebraucht. Du hast dich toll konzentriert.`;
+        el.doneText.textContent = t("done.text", total);
         show("done");
         return;
       }
       run.view = "switch";
-      el.switchTitle.textContent = "Super gemacht!";
-      el.switchText.textContent = "Ein Bleistift ist aufgebraucht. Zeit für eine kleine Pause.";
-      el.next.textContent = "Pause starten";
+      el.switchTitle.textContent = t("switch.doneTitle");
+      el.switchText.textContent = t("switch.doneText");
+      el.next.textContent = t("switch.startBreak");
     } else {
       run.view = "switch";
-      el.switchTitle.textContent = "Weiter geht's!";
-      el.switchText.textContent = "Die Pause ist vorbei. Jetzt kommt die nächste Lernzeit.";
-      el.next.textContent = "Lernzeit starten";
+      el.switchTitle.textContent = t("switch.breakTitle");
+      el.switchText.textContent = t("switch.breakText");
+      el.next.textContent = t("switch.startFocus");
     }
     saveRun();
     renderRounds(el.roundsSwitch);
@@ -676,7 +710,7 @@
   for (const ev of ["pointerup", "pointerleave", "pointercancel"]) el.stop.addEventListener(ev, holdCancel);
   el.stop.addEventListener("contextmenu", (e) => e.preventDefault());
   el.stop.addEventListener("click", (e) => {
-    if (e.detail === 0 && confirm("Timer beenden?")) endEarly();
+    if (e.detail === 0 && confirm(t("timer.confirmStop"))) endEarly();
   });
 
   /* ---------- Laufende Sitzung speichern & fortsetzen ---------- */
@@ -768,6 +802,7 @@
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   el.installHint.hidden = !(isIOS && !isStandalone);
 
+  applyLanguage();
   buildPencil(el.pencil);
   if (!resumeRun()) openPlan();
 

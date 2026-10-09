@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Hausaufgaben-Timer</title>
-  <meta name="description" content="Hausaufgaben mit Grundschulkindern planen, mit dem Bleistift-Timer lernen und danach kurz bewerten.">
+  <meta name="description" content="Hausaufgaben mit Grundschulkindern planen, mit dem Bleistift-Timer lernen und danach kurz bewerten. Homework timer for primary school kids and their parents.">
   <meta name="theme-color" content="#f2f4f8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -22,32 +22,38 @@
   <!-- Kinderprofil anlegen / bearbeiten -->
   <main id="screen-profile" class="screen parent">
     <div class="p-wrap">
+      <div class="p-bar end">
+        <div class="lang" role="group" data-i18n-aria="lang.label">
+          <button type="button" data-lang="de">DE</button>
+          <button type="button" data-lang="en">EN</button>
+        </div>
+      </div>
       <header class="p-head">
         <img src="icons/icon-192.png" alt="" class="app-mark" width="48" height="48">
-        <h1 id="profile-title">Für wen ist die Lernzeit?</h1>
-        <p class="lead">Ein Spitzname reicht. Alle Angaben bleiben nur auf diesem Gerät.</p>
+        <h1 id="profile-title"></h1>
+        <p class="lead" data-i18n="profile.lead"></p>
       </header>
 
       <form id="profile-form" class="p-form" autocomplete="off">
         <label class="field">
-          <span class="field-label">Spitzname</span>
-          <input id="profile-name" type="text" maxlength="20" required placeholder="z. B. Mia">
+          <span class="field-label" data-i18n="profile.name"></span>
+          <input id="profile-name" type="text" maxlength="20" required data-i18n-ph="profile.namePh">
         </label>
 
         <fieldset class="choice">
-          <legend>Klasse</legend>
+          <legend data-i18n="profile.grade"></legend>
           <div class="options" id="profile-grade">
             <button type="button" value="1">1</button>
             <button type="button" value="2">2</button>
             <button type="button" value="3">3</button>
             <button type="button" value="4">4</button>
           </div>
-          <p class="help">Daraus schlägt die App passende Lern- und Pausenzeiten vor.</p>
+          <p class="help" data-i18n="profile.gradeHelp"></p>
         </fieldset>
 
-        <button type="submit" class="btn btn-primary btn-big">Speichern</button>
-        <button type="button" id="profile-cancel" class="btn btn-quiet">Abbrechen</button>
-        <button type="button" id="profile-delete" class="btn btn-danger">Profil und Verlauf löschen</button>
+        <button type="submit" class="btn btn-primary btn-big" data-i18n="profile.save"></button>
+        <button type="button" id="profile-cancel" class="btn btn-quiet" data-i18n="profile.cancel"></button>
+        <button type="button" id="profile-delete" class="btn btn-danger" data-i18n="profile.delete"></button>
       </form>
     </div>
   </main>
@@ -56,34 +62,38 @@
   <main id="screen-plan" class="screen parent">
     <div class="p-wrap">
       <header class="p-bar">
-        <span class="brand"><img src="icons/icon-192.png" alt="" width="28" height="28"> Lern-Timer</span>
+        <span class="brand"><img src="icons/icon-192.png" alt="" width="28" height="28"> <span data-i18n="app.short"></span></span>
+        <div class="lang" role="group" data-i18n-aria="lang.label">
+          <button type="button" data-lang="de">DE</button>
+          <button type="button" data-lang="en">EN</button>
+        </div>
       </header>
 
-      <nav class="kids" aria-label="Kinder">
+      <nav class="kids" data-i18n-aria="plan.kids">
         <div id="kid-list" class="kid-list"></div>
-        <button type="button" id="kid-add" class="kid-chip kid-add">+ Kind</button>
+        <button type="button" id="kid-add" class="kid-chip kid-add" data-i18n="plan.addKid"></button>
       </nav>
 
       <div class="plan-title">
-        <h1 id="plan-heading">Lernzeit planen</h1>
-        <button type="button" id="kid-edit" class="link">Profil bearbeiten</button>
+        <h1 id="plan-heading"></h1>
+        <button type="button" id="kid-edit" class="link" data-i18n="plan.editProfile"></button>
       </div>
 
       <form id="plan-form" class="p-form">
         <fieldset class="choice">
-          <legend>Fach</legend>
+          <legend data-i18n="plan.subject"></legend>
           <div class="chips" data-name="subject">
-            <button type="button" value="Mathe">Mathe</button>
-            <button type="button" value="Deutsch">Deutsch</button>
-            <button type="button" value="Sachunterricht">Sachunterricht</button>
-            <button type="button" value="Englisch">Englisch</button>
-            <button type="button" value="Lesen">Lesen</button>
-            <button type="button" value="Anderes">Anderes</button>
+            <button type="button" value="math" data-i18n="subj.math"></button>
+            <button type="button" value="language" data-i18n="subj.language"></button>
+            <button type="button" value="science" data-i18n="subj.science"></button>
+            <button type="button" value="foreign" data-i18n="subj.foreign"></button>
+            <button type="button" value="reading" data-i18n="subj.reading"></button>
+            <button type="button" value="other" data-i18n="subj.other"></button>
           </div>
         </fieldset>
 
         <fieldset class="choice">
-          <legend>Lernzeit in Minuten</legend>
+          <legend data-i18n="plan.focus"></legend>
           <div class="options" data-name="focus">
             <button type="button" value="5">5</button>
             <button type="button" value="10">10</button>
@@ -95,7 +105,7 @@
         </fieldset>
 
         <fieldset class="choice">
-          <legend>Pause in Minuten</legend>
+          <legend data-i18n="plan.break"></legend>
           <div class="options" data-name="break">
             <button type="button" value="2">2</button>
             <button type="button" value="3">3</button>
@@ -106,7 +116,7 @@
         </fieldset>
 
         <fieldset class="choice">
-          <legend>Runden</legend>
+          <legend data-i18n="plan.rounds"></legend>
           <div class="options" data-name="rounds">
             <button type="button" value="1">1</button>
             <button type="button" value="2">2</button>
@@ -117,35 +127,33 @@
 
         <div class="pair">
           <fieldset class="choice">
-            <legend>Restzeit als Zahl</legend>
+            <legend data-i18n="plan.showTime"></legend>
             <div class="options" data-name="showTime">
-              <button type="button" value="on">An</button>
-              <button type="button" value="off">Aus</button>
+              <button type="button" value="on" data-i18n="on"></button>
+              <button type="button" value="off" data-i18n="off"></button>
             </div>
           </fieldset>
           <fieldset class="choice">
-            <legend>Ton am Ende</legend>
+            <legend data-i18n="plan.sound"></legend>
             <div class="options" data-name="sound">
-              <button type="button" value="on">An</button>
-              <button type="button" value="off">Aus</button>
+              <button type="button" value="on" data-i18n="on"></button>
+              <button type="button" value="off" data-i18n="off"></button>
             </div>
           </fieldset>
         </div>
 
         <p id="summary" class="summary"></p>
 
-        <button type="submit" class="btn btn-primary btn-big">Los geht's</button>
-        <p class="help center">Danach das Handy dem Kind geben.</p>
+        <button type="submit" class="btn btn-primary btn-big" data-i18n="plan.start"></button>
+        <p class="help center" data-i18n="plan.handHint"></p>
       </form>
 
       <div class="p-links">
-        <button type="button" id="open-history" class="btn btn-secondary">Verlauf ansehen</button>
-        <button type="button" class="btn btn-quiet" disabled>Feedback senden · bald verfügbar</button>
+        <button type="button" id="open-history" class="btn btn-secondary"></button>
+        <button type="button" class="btn btn-quiet" disabled data-i18n="plan.feedback"></button>
       </div>
 
-      <p id="install-hint" class="install-hint" hidden>
-        Tipp: Im Teilen-Menü „Zum Home-Bildschirm“ wählen, dann läuft der Timer wie eine App.
-      </p>
+      <p id="install-hint" class="install-hint" hidden data-i18n="plan.installHint"></p>
     </div>
   </main>
 
@@ -153,67 +161,67 @@
   <main id="screen-rate" class="screen parent">
     <div class="p-wrap">
       <header class="p-head left">
-        <h1 id="rate-heading">Wie lief's?</h1>
+        <h1 id="rate-heading"></h1>
         <p id="rate-sub" class="lead"></p>
       </header>
 
       <form id="rate-form" class="p-form">
         <fieldset class="choice">
-          <legend>Wie konzentriert war <span class="kid-name"></span>?</legend>
+          <legend id="q-focus"></legend>
           <div class="options rate" data-name="focus">
-            <button type="button" value="5">sehr gut</button>
-            <button type="button" value="4">gut</button>
-            <button type="button" value="3">mittel</button>
-            <button type="button" value="2">wenig</button>
-            <button type="button" value="1">kaum</button>
+            <button type="button" value="5" data-i18n="rate.focus.5"></button>
+            <button type="button" value="4" data-i18n="rate.focus.4"></button>
+            <button type="button" value="3" data-i18n="rate.focus.3"></button>
+            <button type="button" value="2" data-i18n="rate.focus.2"></button>
+            <button type="button" value="1" data-i18n="rate.focus.1"></button>
           </div>
         </fieldset>
 
         <fieldset class="choice">
-          <legend>Wie viel musstest du helfen oder anleiten?</legend>
+          <legend data-i18n="rate.helpQ"></legend>
           <div class="options rate" data-name="help">
-            <button type="button" value="5">nichts</button>
-            <button type="button" value="4">wenig</button>
-            <button type="button" value="3">etwas</button>
-            <button type="button" value="2">viel</button>
-            <button type="button" value="1">ständig</button>
+            <button type="button" value="5" data-i18n="rate.help.5"></button>
+            <button type="button" value="4" data-i18n="rate.help.4"></button>
+            <button type="button" value="3" data-i18n="rate.help.3"></button>
+            <button type="button" value="2" data-i18n="rate.help.2"></button>
+            <button type="button" value="1" data-i18n="rate.help.1"></button>
           </div>
         </fieldset>
 
         <fieldset class="choice">
-          <legend>Wie ging es <span class="kid-name"></span> dabei?</legend>
+          <legend id="q-child"></legend>
           <div class="options faces" data-name="childMood">
-            <button type="button" value="3"><span class="face" aria-hidden="true">😊</span>gut</button>
-            <button type="button" value="2"><span class="face" aria-hidden="true">😐</span>gemischt</button>
-            <button type="button" value="1"><span class="face" aria-hidden="true">😣</span>frustriert</button>
+            <button type="button" value="3"><span class="face" aria-hidden="true">😊</span><span data-i18n="rate.child.3"></span></button>
+            <button type="button" value="2"><span class="face" aria-hidden="true">😐</span><span data-i18n="rate.child.2"></span></button>
+            <button type="button" value="1"><span class="face" aria-hidden="true">😣</span><span data-i18n="rate.child.1"></span></button>
           </div>
         </fieldset>
 
         <fieldset class="choice">
-          <legend>Wie geht es dir gerade?</legend>
+          <legend data-i18n="rate.parentQ"></legend>
           <div class="options faces" data-name="parentMood">
-            <button type="button" value="3"><span class="face" aria-hidden="true">😌</span>entspannt</button>
-            <button type="button" value="2"><span class="face" aria-hidden="true">😬</span>angespannt</button>
-            <button type="button" value="1"><span class="face" aria-hidden="true">😤</span>genervt</button>
+            <button type="button" value="3"><span class="face" aria-hidden="true">😌</span><span data-i18n="rate.parent.3"></span></button>
+            <button type="button" value="2"><span class="face" aria-hidden="true">😬</span><span data-i18n="rate.parent.2"></span></button>
+            <button type="button" value="1"><span class="face" aria-hidden="true">😤</span><span data-i18n="rate.parent.1"></span></button>
           </div>
         </fieldset>
 
         <fieldset class="choice">
-          <legend>Wie schwer waren die Aufgaben?</legend>
+          <legend data-i18n="rate.diffQ"></legend>
           <div class="options" data-name="difficulty">
-            <button type="button" value="easy">zu leicht</button>
-            <button type="button" value="ok">passend</button>
-            <button type="button" value="hard">zu schwer</button>
+            <button type="button" value="easy" data-i18n="rate.diff.easy"></button>
+            <button type="button" value="ok" data-i18n="rate.diff.ok"></button>
+            <button type="button" value="hard" data-i18n="rate.diff.hard"></button>
           </div>
         </fieldset>
 
         <label class="field">
-          <span class="field-label">Notiz für dich <span class="optional">(optional)</span></span>
-          <textarea id="rate-note" rows="3" maxlength="500" placeholder="z. B. nach dem Schwimmen sehr müde"></textarea>
+          <span class="field-label"><span data-i18n="rate.note"></span> <span class="optional" data-i18n="rate.optional"></span></span>
+          <textarea id="rate-note" rows="3" maxlength="500" data-i18n-ph="rate.notePh"></textarea>
         </label>
 
-        <button type="submit" class="btn btn-primary btn-big">Speichern</button>
-        <button type="button" id="rate-skip" class="btn btn-quiet">Überspringen</button>
+        <button type="submit" class="btn btn-primary btn-big" data-i18n="rate.save"></button>
+        <button type="button" id="rate-skip" class="btn btn-quiet" data-i18n="rate.skip"></button>
       </form>
     </div>
   </main>
@@ -222,56 +230,57 @@
   <main id="screen-history" class="screen parent">
     <div class="p-wrap">
       <header class="p-bar">
-        <button type="button" id="history-back" class="link">‹ Zurück</button>
+        <button type="button" id="history-back" class="link" data-i18n="history.back"></button>
       </header>
-      <h1 id="history-heading" class="h-title">Verlauf</h1>
+      <h1 id="history-heading" class="h-title"></h1>
       <p id="history-stats" class="lead left"></p>
       <ol id="history-list" class="history"></ol>
-      <p id="history-empty" class="empty" hidden>Noch keine Sitzungen. Nach jeder Lernzeit erscheint hier deine kurze Bewertung.</p>
+      <p id="history-empty" class="empty" hidden data-i18n="history.empty"></p>
     </div>
   </main>
 
   <!-- ================= KINDMODUS ================= -->
 
   <main id="screen-timer" class="screen" data-phase="focus">
-    <ol id="rounds" class="rounds" aria-label="Runden"></ol>
+    <ol id="rounds" class="rounds"></ol>
 
     <div class="readout">
-      <p id="phase-title" class="phase-label">Lernzeit</p>
-      <p id="time" class="time">15:00</p>
+      <p id="phase-title" class="phase-label"></p>
+      <p id="time" class="time"></p>
     </div>
 
-    <div id="pencil" class="pencil pencil-main" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="Noch die ganze Zeit"></div>
+    <div id="pencil" class="pencil pencil-main" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"></div>
 
     <div class="timer-controls">
-      <button id="btn-toggle" class="btn btn-primary btn-big" type="button">Anhalten</button>
+      <button id="btn-toggle" class="btn btn-primary btn-big" type="button"></button>
       <button id="btn-stop" class="btn btn-quiet hold" type="button" aria-describedby="stop-hint">
         <span class="hold-fill" aria-hidden="true"></span>
-        <span class="hold-label">Beenden</span>
+        <span class="hold-label" data-i18n="timer.stop"></span>
       </button>
-      <p id="stop-hint" class="hint">Zum Beenden gedrückt halten</p>
+      <p id="stop-hint" class="hint" data-i18n="timer.stopHint"></p>
     </div>
   </main>
 
   <main id="screen-switch" class="screen">
     <div class="switch-card">
-      <ol id="rounds-switch" class="rounds rounds-big" aria-label="Runden"></ol>
-      <h2 id="switch-title">Super gemacht!</h2>
-      <p id="switch-text">Zeit für eine kleine Pause.</p>
-      <button id="btn-next" class="btn btn-primary btn-big" type="button">Pause starten</button>
+      <ol id="rounds-switch" class="rounds rounds-big"></ol>
+      <h2 id="switch-title"></h2>
+      <p id="switch-text"></p>
+      <button id="btn-next" class="btn btn-primary btn-big" type="button"></button>
     </div>
   </main>
 
   <main id="screen-done" class="screen">
     <div class="switch-card">
-      <ol id="rounds-done" class="rounds rounds-big" aria-label="Geschaffte Runden"></ol>
-      <h2>Geschafft!</h2>
-      <p id="done-text">Alle Bleistifte sind aufgebraucht. Du hast dich toll konzentriert.</p>
-      <button id="btn-handover" class="btn btn-primary btn-big" type="button">Fertig</button>
-      <p class="hint">Gib das Handy jetzt Mama oder Papa.</p>
+      <ol id="rounds-done" class="rounds rounds-big"></ol>
+      <h2 data-i18n="done.title"></h2>
+      <p id="done-text"></p>
+      <button id="btn-handover" class="btn btn-primary btn-big" type="button" data-i18n="done.button"></button>
+      <p class="hint" data-i18n="done.hint"></p>
     </div>
   </main>
 
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

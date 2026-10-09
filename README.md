@@ -23,6 +23,7 @@ Weitere Details:
 - Der Timer rechnet mit echten Uhrzeiten: Wird die App kurz verlassen oder neu geladen, läuft er korrekt weiter.
 - Alle Daten bleiben im Browser auf dem Gerät (localStorage). Löschen über „Profil bearbeiten“.
 - Funktioniert nach dem ersten Öffnen auch offline.
+- **Deutsch und Englisch:** Die Sprache folgt dem Gerät und lässt sich oben rechts im Elternmodus umschalten. Alle Texte stehen in `i18n.js`.
 - Konzept: siehe Dokument „Konzept Elternmodus – Hausaufgaben-Timer“.
 
 ## Auf dem iPhone verwenden
@@ -58,6 +59,7 @@ Nach Änderungen an den App-Dateien in `sw.js` die `VERSION` erhöhen. Installie
 |---|---|
 | `index.html` | Bildschirme: Profil, Planen, Bewerten, Verlauf (Eltern); Timer, Wechsel, Geschafft (Kind) |
 | `styles.css` | Gestaltung inkl. Bleistift |
+| `i18n.js` | Alle Texte auf Deutsch und Englisch |
 | `app.js` | Profile, Planung, Bewertung, Verlauf, Timer-Logik, Speichern, Ton, Wake Lock |
 | `sw.js` | Offline-Unterstützung |
 | `manifest.webmanifest`, `icons/` | Installation als App |
