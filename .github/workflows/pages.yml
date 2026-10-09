@@ -24,8 +24,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Webseiten-Dateien zusammenstellen
         run: |
+          # Alle Dateien der App veröffentlichen, außer Git-, Workflow- und Doku-Dateien
           mkdir _site
-          cp -r index.html styles.css app.js sw.js manifest.webmanifest icons .nojekyll _site/
+          tar --exclude=./.git --exclude=./.github --exclude=./_site --exclude=./README.md -cf - . | tar -xf - -C _site
+          # Prüfen, dass jede in index.html eingebundene Datei auch da ist
+          for f in $(grep -oE '(src|href)="[^"#:]+' index.html | sed -E 's/^(src|href)="//; s/\?.*//' | sort -u); do
+            test -f "_site/$f" || { echo "Fehlt: $f"; exit 1; }
+          done
+          ls -la _site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

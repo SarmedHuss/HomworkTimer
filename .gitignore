@@ -1,0 +1,4 @@
+# Test-Screenshots und lokale Dateien nicht ins Repo
+/*.png
+_site/
+.DS_Store
